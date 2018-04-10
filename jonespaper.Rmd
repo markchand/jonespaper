@@ -1,0 +1,67 @@
+---
+title: "Co-Citation Attempt #1"
+author: "Mark Hand"
+date: "3/12/2018"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE, cache = TRUE, message=FALSE, warning=FALSE)
+```
+
+## Co-Citation Analysis 
+
+The goal: To see what papers are at the center of the policy entrepreneurship and political entrepreneurship literature(s). Then I want to see to what degree any of that pulls from entrepreneurship literature and leadership literature. This is the primary package I'll be using: 
+
+https://cran.r-project.org/web/packages/bibliometrix/bibliometrix.pdf
+
+Here is a tutorial: 
+
+https://htmlpreview.github.io/?https://github.com/massimoaria/bibliometrix/master/vignettes/bibliometrix-vignette.html
+
+Before anything else, we have to make decisions about what we'll include and discard, as we pull detail from Web of Knowledge. My first search, "policy entrepreneurs", resulted in 312 records. Below are a bunch of commands that ran successfully, pulled from the github tutorial. Watch out! The tutorial uses the same dataframe names for different dataframes. 
+
+```{r}
+rm(list = ls())
+library(igraph)
+library(bibliometrix)
+D <- readFiles("/Users/markchand/Documents/GitHub/jonespaper/savedrecs.bib")
+M <- convert2df(D, dbsource = "isi", format = "bibtex")
+results <- biblioAnalysis(M, sep = ";")
+summary(results)
+S <- summary(object = results, k = 10, pause = FALSE)
+plot(x = results, k = 10, pause = FALSE)
+
+CR <- citations(M, field = "article", sep = ".  ")
+CR$Cited[1:10]
+CR <- citations(M, field = "author", sep = ".  ")
+CR$Cited[1:10]
+CR <- localCitations(M, sep = ".  ")
+CR$Authors[1:10,]
+CR$Papers[1:10,]
+DF <- dominance(results, k = 10)
+DF
+authors=gsub(","," ",names(results$Authors)[1:10])
+indices <- Hindex(M, authors, sep = ";",years=50)
+indices$H
+L <- lotka(results)
+L$AuthorProd
+
+A <- cocMatrix(M, Field = "SO", sep = ";")
+sort(Matrix::colSums(A), decreasing = TRUE)[1:5]
+A <- cocMatrix(M, Field = "CR", sep = ".  ")
+A <- cocMatrix(M, Field = "AU", sep = ";")
+M <- metaTagExtraction(M, Field = "AU_CO", sep = ";")
+A <- cocMatrix(M, Field = "AU_CO", sep = ";")
+A <- cocMatrix(M, Field = "DE", sep = ";")
+A <- cocMatrix(M, Field = "ID", sep = ";")
+
+NetMatrix <- biblioNetwork(M, analysis = "coupling", network = "references", sep = ".  ")
+net=networkPlot(NetMatrix, normalize = "salton", weighted=T, n = 20, Title = "Authors' Coupling", type = "fruchterman", size=FALSE,remove.multiple=TRUE)
+
+NetMatrix <- biblioNetwork(M, analysis = "co-citation", network = "references", sep = ".  ")
+net=networkPlot(NetMatrix, n = 15, Title = "Co-Citation Network", type = "fruchterman", size=T, remove.multiple=FALSE, labelsize=0.7,edgesize = 5)
+
+CS <- conceptualStructure(M,field="ID", minDegree=12, k.max=5, stemming=FALSE, labelsize=10)
+histResults <- histNetwork(M, n = 20, sep = ".  ")
+```
